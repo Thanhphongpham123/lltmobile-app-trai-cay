@@ -458,6 +458,41 @@ public class FoodDataManager {
         return prefs.getString(KEY_PASSWORD, "123456");
     }
 
+    public static SharedPreferences currentProfile(Context context) {
+        return profileFor(context, getLastLoginEmail(context));
+    }
+
+    private static SharedPreferences profileFor(Context context, String loginEmail) {
+        String account = loginEmail.trim().toLowerCase(java.util.Locale.ROOT);
+        SharedPreferences profile = context.getSharedPreferences(
+                profile_activity.PREFS_NAME + ":" + account, Context.MODE_PRIVATE);
+        SharedPreferences legacy = context.getSharedPreferences(profile_activity.PREFS_NAME, Context.MODE_PRIVATE);
+        if (!profile.contains(profile_activity.KEY_EMAIL)
+                && loginEmail.equalsIgnoreCase(legacy.getString(profile_activity.KEY_EMAIL, ""))) {
+            profile.edit()
+                    .putString(profile_activity.KEY_NAME, legacy.getString(profile_activity.KEY_NAME, "Khách hàng"))
+                    .putString(profile_activity.KEY_EMAIL, loginEmail)
+                    .putString(profile_activity.KEY_PHONE, legacy.getString(profile_activity.KEY_PHONE, ""))
+                    .putString(profile_activity.KEY_ADDRESS, legacy.getString(profile_activity.KEY_ADDRESS, ""))
+                    .apply();
+        }
+        if ("buu@foodapp.vn".equals(account) && !profile.contains(profile_activity.KEY_NAME)) {
+            SharedPreferences.Editor defaults = profile.edit()
+                    .putString(profile_activity.KEY_NAME, "Phạm Ngọc Thành Phong");
+            if (!profile.contains(profile_activity.KEY_EMAIL)) {
+                defaults.putString(profile_activity.KEY_EMAIL, "buu@foodapp.vn");
+            }
+            if (!profile.contains(profile_activity.KEY_PHONE)) {
+                defaults.putString(profile_activity.KEY_PHONE, "0352847621");
+            }
+            if (!profile.contains(profile_activity.KEY_ADDRESS)) {
+                defaults.putString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
+            }
+            defaults.apply();
+        }
+        return profile;
+    }
+
     public static void setPassword(Context context, String newPassword) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_FOOD, Context.MODE_PRIVATE);
         prefs.edit()
@@ -466,9 +501,7 @@ public class FoodDataManager {
                 .apply();
 
         // Cập nhật luôn mật khẩu của email hiện tại trong danh sách tài khoản đã đăng ký
-        SharedPreferences profilePrefs = context.getSharedPreferences(profile_activity.PREFS_NAME, Context.MODE_PRIVATE);
-        String currentEmail = profilePrefs.getString(profile_activity.KEY_EMAIL, "buu@foodapp.vn");
-        updateUserPasswordByEmail(context, currentEmail, newPassword);
+        updateUserPasswordByEmail(context, getLastLoginEmail(context), newPassword);
     }
 
     public static void registerAccount(Context context, String name, String email, String phone, String password) {
@@ -509,12 +542,14 @@ public class FoodDataManager {
                 JSONObject u = arr.getJSONObject(i);
                 if (u.optString("email").equalsIgnoreCase(email)) {
                     if (u.optString("password").equals(password)) {
-                        SharedPreferences profilePrefs = context.getSharedPreferences(profile_activity.PREFS_NAME, Context.MODE_PRIVATE);
-                        profilePrefs.edit()
-                                .putString(profile_activity.KEY_NAME, u.optString("name", "Khách hàng"))
-                                .putString(profile_activity.KEY_EMAIL, u.optString("email", email))
-                                .putString(profile_activity.KEY_PHONE, u.optString("phone", "0352847621"))
-                                .apply();
+                        SharedPreferences profile = profileFor(context, email);
+                        if (!profile.contains(profile_activity.KEY_EMAIL)) {
+                            profile.edit()
+                                    .putString(profile_activity.KEY_NAME, u.optString("name", "Khách hàng"))
+                                    .putString(profile_activity.KEY_EMAIL, email)
+                                    .putString(profile_activity.KEY_PHONE, u.optString("phone", ""))
+                                    .apply();
+                        }
                         prefs.edit()
                                 .putString(KEY_PASSWORD, password)
                                 .putString(KEY_LAST_EMAIL, email)
@@ -532,6 +567,10 @@ public class FoodDataManager {
         // Tài khoản mặc định ban đầu
         String savedDefaultPass = getPassword(context);
         if (password.equals(savedDefaultPass) || password.equals("123456")) {
+            SharedPreferences profile = profileFor(context, email);
+            if (!profile.contains(profile_activity.KEY_EMAIL)) {
+                profile.edit().putString(profile_activity.KEY_EMAIL, email).apply();
+            }
             prefs.edit()
                     .putString(KEY_LAST_EMAIL, email)
                     .putString(KEY_LAST_PASS, password)

@@ -136,15 +136,16 @@ public class login_activity extends AppCompatActivity {
                         return;
                     }
 
-                    String finalPhone = phone.isEmpty() ? "0352847621" : phone;
+                    String finalPhone = phone;
 
                     // Lưu vĩnh viễn tài khoản mới vào bộ nhớ
                     FoodDataManager.registerAccount(this, name, email, finalPhone, pass);
 
-                    SharedPreferences prefs = getSharedPreferences(profile_activity.PREFS_NAME, MODE_PRIVATE);
+                    SharedPreferences prefs = FoodDataManager.currentProfile(this);
                     prefs.edit()
                             .putString(profile_activity.KEY_NAME, name)
                             .putString(profile_activity.KEY_EMAIL, email)
+                            .putString(profile_activity.KEY_ADDRESS, "")
                             .putString(profile_activity.KEY_PHONE, finalPhone)
                             .apply();
 

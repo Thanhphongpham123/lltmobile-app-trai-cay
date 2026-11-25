@@ -26,10 +26,7 @@
         android:layout_width="116dp"
         android:layout_height="116dp"
         android:layout_marginTop="20dp"
-        android:background="@drawable/radius"
-        android:contentDescription="Avatar"
-        android:elevation="4dp"
-        android:padding="26dp"
+        android:importantForAccessibility="no"
         android:scaleType="fitCenter"
         android:src="@drawable/user"
         app:layout_constraintEnd_toEndOf="parent"
@@ -71,7 +68,10 @@
         android:backgroundTint="#E65100"
         android:paddingStart="28dp"
         android:paddingEnd="28dp"
-        android:text="Edit profile"
+        android:drawableStart="@android:drawable/ic_menu_edit"
+        android:drawableTint="#FFFFFF"
+        android:drawablePadding="8dp"
+        android:text="Chỉnh sửa hồ sơ"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
@@ -93,13 +93,13 @@
         android:gravity="start|center_vertical"
         android:paddingStart="24dp"
         android:paddingEnd="20dp"
-        android:text="History (Đơn trái cây)"
+        android:text="Lịch sử đơn hàng"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="19sp"
         android:textStyle="bold"
         app:cornerRadius="18dp"
-        app:drawableTint="#FFFFFF"
+        android:drawableTint="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/MovetoEditProfile" />
@@ -116,13 +116,13 @@
         android:gravity="start|center_vertical"
         android:paddingStart="24dp"
         android:paddingEnd="20dp"
-        android:text="Log out"
+        android:text="Đăng xuất"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="19sp"
         android:textStyle="bold"
         app:cornerRadius="18dp"
-        app:drawableTint="#FFFFFF"
+        android:drawableTint="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnHistory" />
@@ -155,9 +155,9 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Home"
+            android:contentDescription="Trang chủ"
             android:padding="8dp"
-            android:scaleType="fitCenter"
+            android:scaleType="centerInside"
             android:src="@drawable/home" />
 
         <ImageButton
@@ -166,21 +166,21 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Security"
+            android:contentDescription="Đổi mật khẩu"
             android:padding="8dp"
-            android:scaleType="fitCenter"
+            android:scaleType="centerInside"
             android:src="@drawable/lock" />
 
         <ImageButton
             android:id="@+id/navAdd"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Orders"
-            android:padding="4dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/add" />
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/history" />
 
         <ImageButton
             android:id="@+id/navMoney"
@@ -190,8 +190,8 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Wallet"
             android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/money" />
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_shop_cart" />
 
         <ImageButton
             android:id="@+id/navProfile"
@@ -199,9 +199,9 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Profile"
+            android:contentDescription="Hồ sơ cá nhân"
             android:padding="8dp"
-            android:scaleType="fitCenter"
+            android:scaleType="centerInside"
             android:src="@drawable/profile" />
     </LinearLayout>
 

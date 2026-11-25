@@ -10,6 +10,8 @@ android {
         applicationId = "com.example.foodappproject"
         minSdk = 24
         targetSdk = 34
+        resValue("string", "avatar_cloud_name", providers.gradleProperty("CLOUDINARY_CLOUD_NAME").orElse("").get())
+        resValue("string", "avatar_upload_preset", providers.gradleProperty("CLOUDINARY_UPLOAD_PRESET").orElse("").get())
         versionCode = 1
         versionName = "1.0"
 
@@ -29,6 +31,7 @@ android {
 }
 
 dependencies {
+    implementation("com.github.bumptech.glide:glide:4.15.1")
 
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
