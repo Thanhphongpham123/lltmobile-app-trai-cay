@@ -80,9 +80,6 @@ public class profile_activity extends AppCompatActivity {
     }
 
     private void loadUserProfile() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String name = prefs.getString(KEY_NAME, "Pham Ngoc Thanh Phong");
-        String address = prefs.getString(KEY_ADDRESS, "TP. Hồ Chí Minh");
         SharedPreferences prefs = FoodDataManager.currentProfile(this);
         String name = prefs.getString(KEY_NAME, DEFAULT_NAME);
         String address = prefs.getString(KEY_ADDRESS, "");
