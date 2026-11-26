@@ -123,6 +123,9 @@ public class FoodDataManager {
     }
 
     public static List<FoodItem> getAllFoods(Context context) {
+        // Đồng bộ ngầm từ REST API: GET /api/fruits
+        ApiClient.requestAsync("GET", "/fruits", null);
+
         SharedPreferences prefs = context.getSharedPreferences(PREFS_FOOD, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_ALL_FOODS, "");
         if (json.isEmpty()) {
@@ -171,17 +174,25 @@ public class FoodDataManager {
     }
 
     public static void addCustomFood(Context context, String name, String category, int price, String description, String emoji) {
+        String id = "custom_" + System.currentTimeMillis();
+        String finalEmoji = (emoji == null || emoji.isEmpty()) ? "🍇" : emoji;
         List<FoodItem> foods = getAllFoods(context);
-        foods.add(0, new FoodItem(
-                "custom_" + System.currentTimeMillis(),
-                name,
-                category,
-                price,
-                "5.0",
-                description,
-                emoji == null || emoji.isEmpty() ? "🍇" : emoji
-        ));
+        foods.add(0, new FoodItem(id, name, category, price, "5.0", description, finalEmoji));
         saveAllFoods(context, foods);
+
+        // Gọi REST API: POST /api/fruits
+        try {
+            JSONObject body = new JSONObject();
+            body.put("id", id);
+            body.put("name", name);
+            body.put("category", category);
+            body.put("price", price);
+            body.put("rating", "5.0");
+            body.put("description", description);
+            body.put("emoji", finalEmoji);
+            ApiClient.requestAsync("POST", "/fruits", body);
+        } catch (Exception ignored) {
+        }
     }
 
     public static void updateFood(Context context, String id, String newName, String newCategory, int newPrice, String newDesc, String newEmoji) {
@@ -199,6 +210,18 @@ public class FoodDataManager {
             }
         }
         saveAllFoods(context, foods);
+
+        // Gọi REST API: PUT /api/fruits/:id
+        try {
+            JSONObject body = new JSONObject();
+            body.put("name", newName);
+            body.put("category", newCategory);
+            body.put("price", newPrice);
+            body.put("description", newDesc);
+            body.put("emoji", newEmoji);
+            ApiClient.requestAsync("PUT", "/fruits/" + ApiClient.encodePath(id), body);
+        } catch (Exception ignored) {
+        }
     }
 
     public static void deleteFood(Context context, String id) {
@@ -210,6 +233,9 @@ public class FoodDataManager {
             }
         }
         saveAllFoods(context, foods);
+
+        // Gọi REST API: DELETE /api/fruits/:id
+        ApiClient.requestAsync("DELETE", "/fruits/" + ApiClient.encodePath(id), null);
     }
 
     public static List<CartItem> getCartItems(Context context) {
@@ -300,6 +326,9 @@ public class FoodDataManager {
     }
 
     public static List<OrderRecord> getOrders(Context context) {
+        // Gọi REST API: GET /api/orders
+        ApiClient.requestAsync("GET", "/orders", null);
+
         List<OrderRecord> orders = new ArrayList<>();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_FOOD, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_ORDERS, "");
@@ -381,6 +410,20 @@ public class FoodDataManager {
         orders.add(0, newOrder);
         saveOrders(context, orders);
         clearCart(context);
+
+        // Gọi REST API: POST /api/orders
+        try {
+            JSONObject body = new JSONObject();
+            body.put("orderId", orderId);
+            body.put("dateTime", dateTime);
+            body.put("itemsSummary", sb.toString());
+            body.put("totalPrice", total);
+            body.put("address", address);
+            body.put("status", paymentStatus);
+            ApiClient.requestAsync("POST", "/orders", body);
+        } catch (Exception ignored) {
+        }
+
         return newOrder;
     }
 
@@ -393,6 +436,14 @@ public class FoodDataManager {
             }
         }
         saveOrders(context, orders);
+
+        // Gọi REST API: PUT /api/orders/:id/status
+        try {
+            JSONObject body = new JSONObject();
+            body.put("status", newStatus);
+            ApiClient.requestAsync("PUT", "/orders/" + ApiClient.encodePath(orderId) + "/status", body);
+        } catch (Exception ignored) {
+        }
     }
 
     public static void deleteOrder(Context context, String orderId) {
@@ -404,6 +455,9 @@ public class FoodDataManager {
             }
         }
         saveOrders(context, orders);
+
+        // Gọi REST API: DELETE /api/orders/:id
+        ApiClient.requestAsync("DELETE", "/orders/" + ApiClient.encodePath(orderId), null);
     }
 
     public static int getTotalRevenue(Context context) {
@@ -416,7 +470,6 @@ public class FoodDataManager {
         return sum;
     }
 
-    // Quản lý thông tin cửa hàng
     public static String getStoreName(Context context) {
         return context.getSharedPreferences(PREFS_FOOD, Context.MODE_PRIVATE)
                 .getString(KEY_STORE_NAME, "Quán Trái Cây Cắt Sẵn FreshCut");
@@ -451,6 +504,18 @@ public class FoodDataManager {
                 .putInt(KEY_DELIVERY_FEE, deliveryFee)
                 .putBoolean(KEY_STORE_OPEN, isOpen)
                 .apply();
+
+        // Gọi REST API: PUT /api/store
+        try {
+            JSONObject body = new JSONObject();
+            body.put("name", name);
+            body.put("address", address);
+            body.put("phone", phone);
+            body.put("deliveryFee", deliveryFee);
+            body.put("isOpen", isOpen);
+            ApiClient.requestAsync("PUT", "/store", body);
+        } catch (Exception ignored) {
+        }
     }
 
     public static String getPassword(Context context) {
@@ -465,10 +530,18 @@ public class FoodDataManager {
                 .putString(KEY_LAST_PASS, newPassword)
                 .apply();
 
-        // Cập nhật luôn mật khẩu của email hiện tại trong danh sách tài khoản đã đăng ký
         SharedPreferences profilePrefs = context.getSharedPreferences(profile_activity.PREFS_NAME, Context.MODE_PRIVATE);
         String currentEmail = profilePrefs.getString(profile_activity.KEY_EMAIL, "buu@foodapp.vn");
         updateUserPasswordByEmail(context, currentEmail, newPassword);
+
+        // Gọi REST API: PUT /api/auth/password
+        try {
+            JSONObject body = new JSONObject();
+            body.put("email", currentEmail);
+            body.put("newPassword", newPassword);
+            ApiClient.requestAsync("PUT", "/auth/password", body);
+        } catch (Exception ignored) {
+        }
     }
 
     public static void registerAccount(Context context, String name, String email, String phone, String password) {
@@ -496,11 +569,23 @@ public class FoodDataManager {
                     .putString(KEY_LAST_EMAIL, email)
                     .putString(KEY_LAST_PASS, password)
                     .apply();
+
+            // Gọi REST API: POST /api/auth/register
+            ApiClient.requestAsync("POST", "/auth/register", userObj);
         } catch (Exception ignored) {
         }
     }
 
     public static boolean authenticateCustomer(Context context, String email, String password) {
+        // Gọi REST API: POST /api/auth/login
+        try {
+            JSONObject loginBody = new JSONObject();
+            loginBody.put("email", email);
+            loginBody.put("password", password);
+            ApiClient.requestAsync("POST", "/auth/login", loginBody);
+        } catch (Exception ignored) {
+        }
+
         SharedPreferences prefs = context.getSharedPreferences(PREFS_FOOD, Context.MODE_PRIVATE);
         String usersJson = prefs.getString(KEY_USERS_LIST, "[]");
         try {
@@ -529,7 +614,6 @@ public class FoodDataManager {
         } catch (Exception ignored) {
         }
 
-        // Tài khoản mặc định ban đầu
         String savedDefaultPass = getPassword(context);
         if (password.equals(savedDefaultPass) || password.equals("123456")) {
             prefs.edit()
