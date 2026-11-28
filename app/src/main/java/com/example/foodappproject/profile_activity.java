@@ -17,10 +17,12 @@ import androidx.core.view.WindowInsetsCompat;
 public class profile_activity extends AppCompatActivity {
 
     public static final String PREFS_NAME = "UserProfilePrefs";
+    public static final String KEY_AVATAR = "avatar_url";
     public static final String KEY_NAME = "user_name";
     public static final String KEY_ADDRESS = "user_address";
     public static final String KEY_EMAIL = "user_email";
     public static final String KEY_PHONE = "user_phone";
+    public static final String DEFAULT_NAME = "Khách hàng";
 
     private TextView tvProfileName;
     private TextView tvProfileInfo;
@@ -78,13 +80,22 @@ public class profile_activity extends AppCompatActivity {
     }
 
     private void loadUserProfile() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String name = prefs.getString(KEY_NAME, "Pham Ngoc Thanh Phong");
-        String address = prefs.getString(KEY_ADDRESS, "TP. Hồ Chí Minh");
-        String email = prefs.getString(KEY_EMAIL, "buu@foodapp.vn");
-        String phone = prefs.getString(KEY_PHONE, "0352847621");
+        SharedPreferences prefs = FoodDataManager.currentProfile(this);
+        String name = prefs.getString(KEY_NAME, DEFAULT_NAME);
+        String address = prefs.getString(KEY_ADDRESS, "");
+        String email = prefs.getString(KEY_EMAIL, "");
+        String phone = prefs.getString(KEY_PHONE, "");
 
+        com.bumptech.glide.Glide.with(this).load(prefs.getString(KEY_AVATAR, null))
+                .circleCrop().placeholder(R.drawable.user).error(R.drawable.user)
+                .into((android.widget.ImageView) findViewById(R.id.imgAvatar));
         tvProfileName.setText(name);
-        tvProfileInfo.setText(email + " • " + phone + "\n" + address);
+        tvProfileInfo.setText("Email: " + valueOrMissing(email)
+                + "\nĐiện thoại: " + valueOrMissing(phone)
+                + "\nĐịa chỉ: " + valueOrMissing(address));
+    }
+
+    private static String valueOrMissing(String value) {
+        return value.trim().isEmpty() ? "Chưa cập nhật" : value;
     }
 }

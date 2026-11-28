@@ -103,7 +103,7 @@ public class cart_activity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        SharedPreferences prefs = getSharedPreferences(profile_activity.PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = FoodDataManager.currentProfile(this);
         String name = prefs.getString(profile_activity.KEY_NAME, "Pham Ngoc Thanh Phong");
         String phone = prefs.getString(profile_activity.KEY_PHONE, "0352847621");
         String address = prefs.getString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
@@ -312,7 +312,7 @@ public class cart_activity extends AppCompatActivity {
     }
 
     private void completeOrder(String paymentStatus) {
-        SharedPreferences prefs = getSharedPreferences(profile_activity.PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = FoodDataManager.currentProfile(this);
         String address = prefs.getString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
         FoodDataManager.OrderRecord order = FoodDataManager.placeOrder(this, address, paymentStatus);
 

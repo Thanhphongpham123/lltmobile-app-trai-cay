@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Trái Cây Cắt Sẵn</string>
+    <string name="shop_cart_count">Giỏ hàng, %1$d sản phẩm</string>
 </resources>

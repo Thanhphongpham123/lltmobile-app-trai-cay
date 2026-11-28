@@ -1,0 +1,22 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal" android:gravity="center_vertical"
+    android:background="@drawable/bg_card_white" android:padding="14dp">
+    <ImageView android:id="@+id/foodPhoto" android:layout_width="74dp" android:layout_height="74dp"
+        android:importantForAccessibility="no" android:scaleType="centerCrop"
+        android:background="@drawable/bg_food_thumb" android:clipToOutline="true" />
+    <TextView android:id="@+id/foodEmoji" android:layout_width="74dp" android:layout_height="74dp"
+        android:gravity="center" android:textSize="34sp" android:background="@drawable/bg_food_thumb" />
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:layout_marginStart="14dp" android:orientation="vertical">
+        <TextView android:id="@+id/foodName" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="#1B5E20" />
+        <TextView android:id="@+id/foodMeta" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="13sp" android:textColor="#558B2F" />
+        <TextView android:id="@+id/foodPrice" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="16sp" android:textStyle="bold" android:textColor="#E65100" />
+    </LinearLayout>
+    <Button android:id="@+id/addFood" android:layout_width="wrap_content" android:layout_height="48dp"
+        android:layout_marginStart="8dp" android:text="+ Thêm" android:textAllCaps="false"
+        android:textColor="#FFFFFF" android:backgroundTint="#287044" />
+</LinearLayout>

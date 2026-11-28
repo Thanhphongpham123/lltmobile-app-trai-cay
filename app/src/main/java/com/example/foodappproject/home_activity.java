@@ -8,9 +8,13 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,19 +26,28 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.text.Normalizer;
+import java.util.LinkedHashMap;
+import com.bumptech.glide.Glide;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class home_activity extends AppCompatActivity {
 
-    private final String[] categories = {"Tất cả", "Hộp cắt sẵn", "Mix thập cẩm", "Trái cây dầm", "Nước ép tươi"};
-    private String selectedCategory = "Tất cả";
+    private static final String STATE_CATEGORY = "selected_category";
+    private static final String ALL_CATEGORIES = "";
+    private final Map<String, String> categories = new LinkedHashMap<>();
+    private List<FoodDataManager.FoodItem> foods;
+    private String selectedCategory = ALL_CATEGORIES;
     private String searchQuery = "";
 
     private TextView tvHomeGreeting;
     private Button btnTopCart;
     private LinearLayout llCategories;
-    private LinearLayout llFoodList;
+    private ArrayAdapter<FoodDataManager.FoodItem> foodAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +64,22 @@ public class home_activity extends AppCompatActivity {
         tvHomeGreeting = findViewById(R.id.tvHomeGreeting);
         btnTopCart = findViewById(R.id.btnTopCart);
         llCategories = findViewById(R.id.llCategories);
-        llFoodList = findViewById(R.id.llFoodList);
+        ListView list = findViewById(R.id.foodList);
+        list.setEmptyView(findViewById(R.id.emptyFoodList));
+        foodAdapter = new ArrayAdapter<FoodDataManager.FoodItem>(this, 0, new ArrayList<>()) {
+            @Override
+            public View getView(int position, View recycled, ViewGroup parent) {
+                View row = recycled != null ? recycled
+                        : getLayoutInflater().inflate(R.layout.row_shop_food, parent, false);
+                bindFood(row, getItem(position));
+                return row;
+            }
+        };
+        list.setAdapter(foodAdapter);
         EditText edtSearch = findViewById(R.id.edtSearchFood);
+        if (savedInstanceState != null) {
+            selectedCategory = savedInstanceState.getString(STATE_CATEGORY, ALL_CATEGORIES);
+        }
 
         btnTopCart.setOnClickListener(v -> startActivity(new Intent(home_activity.this, cart_activity.class)));
 
@@ -62,8 +89,8 @@ public class home_activity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                searchQuery = s.toString().trim().toLowerCase(Locale.getDefault());
-                renderFoodList();
+                searchQuery = normalizeSearch(s.toString());
+                if (foods != null) renderFoodList();
             }
 
             @Override
@@ -71,23 +98,54 @@ public class home_activity extends AppCompatActivity {
         });
 
         FoodDataManager.setupBottomNav(this, "home");
-        renderCategories();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_CATEGORY, selectedCategory);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        SharedPreferences prefs = getSharedPreferences(profile_activity.PREFS_NAME, MODE_PRIVATE);
-        String name = prefs.getString(profile_activity.KEY_NAME, "Trần Thiên Bửu");
+        SharedPreferences prefs = FoodDataManager.currentProfile(this);
+        String name = prefs.getString(profile_activity.KEY_NAME, profile_activity.DEFAULT_NAME);
         boolean isOpen = FoodDataManager.isStoreOpen(this);
-        tvHomeGreeting.setText("Xin chào, " + name + (isOpen ? " 🍉" : " (Quán tạm nghỉ)"));
+        tvHomeGreeting.setText("Xin chào, " + name);
+        TextView storeStatus = findViewById(R.id.tvStoreStatus);
+        storeStatus.setText(isOpen ? "Đang mở cửa" : "Quầy tạm nghỉ");
         updateCartBadge();
+        foods = FoodDataManager.getAllFoods(this);
+        categories.clear();
+        categories.put(ALL_CATEGORIES, "Tất cả");
+        for (FoodDataManager.FoodItem food : foods) {
+            String category = food.category.trim();
+            if (!category.isEmpty()) {
+                categories.putIfAbsent(categoryKey(category), category);
+            }
+        }
+        if (!categories.containsKey(selectedCategory)) selectedCategory = ALL_CATEGORIES;
+        renderCategories();
         renderFoodList();
+    }
+
+    private static String normalizeSearch(String text) {
+        return Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .replace('đ', 'd')
+                .trim()
+                .replaceAll("\\s+", " ");
+    }
+
+    private static String categoryKey(String category) {
+        return category.trim().toLowerCase(Locale.ROOT);
     }
 
     private void updateCartBadge() {
         int count = FoodDataManager.getCartTotalCount(this);
-        btnTopCart.setText("🛒 " + count);
+        btnTopCart.setText(String.valueOf(count));
+        btnTopCart.setContentDescription(getString(R.string.shop_cart_count, count));
     }
 
     private int dp(int val) {
@@ -96,9 +154,13 @@ public class home_activity extends AppCompatActivity {
 
     private void renderCategories() {
         llCategories.removeAllViews();
-        for (String cat : categories) {
+        for (Map.Entry<String, String> category : categories.entrySet()) {
+            String key = category.getKey();
             TextView chip = new TextView(this);
-            chip.setText(cat);
+            chip.setText(category.getValue());
+            chip.setFocusable(true);
+            chip.setMinHeight(dp(48));
+            chip.setGravity(Gravity.CENTER);
             chip.setTextSize(14f);
             chip.setTypeface(null, Typeface.BOLD);
             chip.setPadding(dp(18), dp(9), dp(18), dp(9));
@@ -110,12 +172,13 @@ public class home_activity extends AppCompatActivity {
             lp.setMarginEnd(dp(10));
             chip.setLayoutParams(lp);
 
-            boolean isSelected = cat.equals(selectedCategory);
+            boolean isSelected = key.equals(selectedCategory);
+            chip.setSelected(isSelected);
             chip.setBackgroundResource(isSelected ? R.drawable.bg_chip_selected : R.drawable.bg_chip_unselected);
             chip.setTextColor(isSelected ? Color.WHITE : Color.parseColor("#1B5E20"));
 
             chip.setOnClickListener(v -> {
-                selectedCategory = cat;
+                selectedCategory = key;
                 renderCategories();
                 renderFoodList();
             });
@@ -124,99 +187,61 @@ public class home_activity extends AppCompatActivity {
     }
 
     private void renderFoodList() {
-        llFoodList.removeAllViews();
-        List<FoodDataManager.FoodItem> foods = FoodDataManager.getAllFoods(this);
-
+        foodAdapter.setNotifyOnChange(false);
+        foodAdapter.clear();
         for (FoodDataManager.FoodItem food : foods) {
-            boolean matchCat = "Tất cả".equals(selectedCategory) || food.category.equalsIgnoreCase(selectedCategory);
+            boolean matchCat = ALL_CATEGORIES.equals(selectedCategory)
+                    || categoryKey(food.category).equals(selectedCategory);
             boolean matchSearch = searchQuery.isEmpty()
-                    || food.name.toLowerCase(Locale.getDefault()).contains(searchQuery)
-                    || food.category.toLowerCase(Locale.getDefault()).contains(searchQuery);
+                    || normalizeSearch(food.name).contains(searchQuery)
+                    || normalizeSearch(food.category).contains(searchQuery);
 
-            if (!matchCat || !matchSearch) continue;
-
-            LinearLayout card = new LinearLayout(this);
-            card.setOrientation(LinearLayout.HORIZONTAL);
-            card.setGravity(Gravity.CENTER_VERTICAL);
-            card.setBackgroundResource(R.drawable.bg_card_white);
-            card.setPadding(dp(14), dp(14), dp(14), dp(14));
-
-            LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-            cardLp.bottomMargin = dp(12);
-            card.setLayoutParams(cardLp);
-
-            TextView tvEmoji = new TextView(this);
-            tvEmoji.setText(food.emoji);
-            tvEmoji.setTextSize(34f);
-            tvEmoji.setGravity(Gravity.CENTER);
-            tvEmoji.setBackgroundResource(R.drawable.bg_food_thumb);
-            LinearLayout.LayoutParams emojiLp = new LinearLayout.LayoutParams(dp(74), dp(74));
-            emojiLp.setMarginEnd(dp(14));
-            tvEmoji.setLayoutParams(emojiLp);
-            card.addView(tvEmoji);
-
-            LinearLayout infoCol = new LinearLayout(this);
-            infoCol.setOrientation(LinearLayout.VERTICAL);
-            LinearLayout.LayoutParams infoLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            infoCol.setLayoutParams(infoLp);
-
-            TextView tvName = new TextView(this);
-            tvName.setText(food.name);
-            tvName.setTextSize(16.5f);
-            tvName.setTypeface(null, Typeface.BOLD);
-            tvName.setTextColor(Color.parseColor("#1B5E20"));
-            infoCol.addView(tvName);
-
-            TextView tvMeta = new TextView(this);
-            tvMeta.setText(food.category + "  •  ⭐ " + food.rating);
-            tvMeta.setTextSize(13f);
-            tvMeta.setTextColor(Color.parseColor("#558B2F"));
-            tvMeta.setPadding(0, dp(3), 0, dp(4));
-            infoCol.addView(tvMeta);
-
-            TextView tvPrice = new TextView(this);
-            tvPrice.setText(FoodDataManager.formatCurrency(food.price));
-            tvPrice.setTextSize(16f);
-            tvPrice.setTypeface(null, Typeface.BOLD);
-            tvPrice.setTextColor(Color.parseColor("#E65100"));
-            infoCol.addView(tvPrice);
-
-            card.addView(infoCol);
-
-            Button btnAdd = new Button(this);
-            btnAdd.setText("+ Thêm");
-            btnAdd.setAllCaps(false);
-            btnAdd.setTextColor(Color.WHITE);
-            btnAdd.setTextSize(14f);
-            btnAdd.setTypeface(null, Typeface.BOLD);
-            btnAdd.setBackgroundResource(R.drawable.bg_chip_selected);
-            LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(dp(82), dp(40));
-            btnLp.setMarginStart(dp(8));
-            btnAdd.setLayoutParams(btnLp);
-
-            btnAdd.setOnClickListener(v -> {
-                FoodDataManager.addToCart(this, food, 1);
-                updateCartBadge();
-                Toast.makeText(this, "Đã thêm " + food.name + " vào giỏ!", Toast.LENGTH_SHORT).show();
-            });
-            card.addView(btnAdd);
-
-            card.setOnClickListener(v -> showFoodDetailDialog(food));
-            llFoodList.addView(card);
+            if (matchCat && matchSearch) foodAdapter.add(food);
         }
+        foodAdapter.notifyDataSetChanged();
+        TextView empty = findViewById(R.id.emptyFoodList);
+        empty.setText(foods.isEmpty() ? "Quầy chưa có sản phẩm." : "Không tìm thấy sản phẩm phù hợp.");
+    }
 
-        if (llFoodList.getChildCount() == 0) {
-            TextView empty = new TextView(this);
-            empty.setText("Không tìm thấy hộp trái cây phù hợp.");
-            empty.setTextSize(16f);
-            empty.setTextColor(Color.parseColor("#33691E"));
-            empty.setGravity(Gravity.CENTER);
-            empty.setPadding(dp(20), dp(40), dp(20), dp(20));
-            llFoodList.addView(empty);
+    private void bindFood(View row, FoodDataManager.FoodItem food) {
+        TextView name = row.findViewById(R.id.foodName);
+        TextView meta = row.findViewById(R.id.foodMeta);
+        TextView price = row.findViewById(R.id.foodPrice);
+        ImageView photo = row.findViewById(R.id.foodPhoto);
+        TextView emoji = row.findViewById(R.id.foodEmoji);
+        name.setText(food.name);
+        meta.setText(food.category + "  •  ⭐ " + food.rating);
+        price.setText(FoodDataManager.formatCurrency(food.price));
+        int fallback;
+        String photoId;
+        switch (food.id) {
+            case "fr1": fallback = R.drawable.fruit_fr1; photoId = "5562607"; break;
+            case "fr2": fallback = R.drawable.fruit_fr2; photoId = "18408842"; break;
+            case "fr3": fallback = R.drawable.fruit_fr3; photoId = "15076701"; break;
+            case "fr4": fallback = R.drawable.fruit_fr4; photoId = "30318205"; break;
+            case "fr5": fallback = R.drawable.fruit_fr5; photoId = "5945709"; break;
+            case "fr6": fallback = R.drawable.fruit_fr6; photoId = "5945789"; break;
+            case "fr7": fallback = R.drawable.fruit_fr7; photoId = "38928050"; break;
+            case "fr8": fallback = R.drawable.fruit_fr8; photoId = "18237485"; break;
+            case "fr9": fallback = R.drawable.fruit_fr9; photoId = "7655897"; break;
+            default: fallback = 0; photoId = null;
         }
+        photo.setVisibility(photoId == null ? View.GONE : View.VISIBLE);
+        emoji.setVisibility(photoId == null ? View.VISIBLE : View.GONE);
+        if (photoId == null) {
+            Glide.with(this).clear(photo);
+            emoji.setText(food.emoji);
+        } else {
+            String url = "https://images.pexels.com/photos/" + photoId + "/pexels-photo-" + photoId
+                    + ".jpeg?auto=compress&w=400&h=400&fit=crop";
+            Glide.with(this).load(url).centerCrop().placeholder(fallback).error(fallback).into(photo);
+        }
+        row.findViewById(R.id.addFood).setOnClickListener(v -> {
+            FoodDataManager.addToCart(this, food, 1);
+            updateCartBadge();
+            Toast.makeText(this, "Đã thêm " + food.name + " vào giỏ!", Toast.LENGTH_SHORT).show();
+        });
+        row.setOnClickListener(v -> showFoodDetailDialog(food));
     }
 
     private void showFoodDetailDialog(FoodDataManager.FoodItem food) {
@@ -231,7 +256,6 @@ public class home_activity extends AppCompatActivity {
                     Toast.makeText(this, "Đã thêm " + food.name + " vào giỏ!", Toast.LENGTH_SHORT).show();
                 })
                 .setNeutralButton("Xem giỏ hàng", (dialog, which) -> {
-                    FoodDataManager.addToCart(this, food, 1);
                     startActivity(new Intent(home_activity.this, cart_activity.class));
                 })
                 .setNegativeButton("Đóng", null)
