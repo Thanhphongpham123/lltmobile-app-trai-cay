@@ -8,8 +8,16 @@ set "PATH=%ANDROID_HOME%\platform-tools;%JAVA_HOME%\bin;%PATH%"
 cd /d "c:\mb cuoi ky\FoodAppProject"
 
 echo ===================================================
-echo   KHOI CHAY PROJECT: QUAN TRAI CAY CAT SAN
+echo   KHOI CHAY PROJECT: QUAN TRAI CAY CAT SAN + API
 echo ===================================================
+
+netstat -ano | findstr ":3000 " | findstr "LISTENING" >nul 2>&1
+if errorlevel 1 (
+    echo [0/4] Dang khoi dong REST API Server ^(port 3000^)...
+    start "FreshCut REST API Server" /min node "c:\mb cuoi ky\FoodAppProject\backend-api\server.js"
+) else (
+    echo [0/4] REST API Server ^(http://localhost:3000/api^) da dang chay.
+)
 
 echo [1/4] Dang bien dich APK (gradlew assembleDebug)...
 call "c:\mb cuoi ky\FoodAppProject\gradlew.bat" assembleDebug
@@ -41,8 +49,9 @@ if not "%BOOT%"=="1" (
 
 echo [4/4] Dang cai dat APK va mo ung dung tren may ao...
 adb.exe install -r "c:\mb cuoi ky\FoodAppProject\app\build\outputs\apk\debug\app-debug.apk"
+adb.exe shell am force-stop com.google.android.apps.nexuslauncher >nul 2>&1
 adb.exe shell am start -n "com.example.foodappproject/.login_activity"
 
 echo ===================================================
-echo   HOAN TAT! Ung dung da duoc mo tren may ao.
+echo   HOAN TAT! Ung dung & REST API da san sang.
 echo ===================================================

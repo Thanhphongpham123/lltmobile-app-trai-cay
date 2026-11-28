@@ -1,6 +1,6 @@
 # HƯỚNG DẪN CHẠY PROJECT TRÊN ANDROID STUDIO & VS CODE
 
-Dự án: **Ứng Dụng Quán Trái Cây Cắt Sẵn (Android Java)**  
+Dự án: **Ứng Dụng Quán Trái Cây Cắt Sẵn (Android Java + Node.js REST API)**  
 Link GitHub: https://github.com/Thanhphongpham123/lltmobile-app-trai-cay
 
 ---
@@ -61,11 +61,36 @@ Nếu chạy trên máy tính cá nhân bằng **VS Code / Antigravity**:
    ```powershell
    .\run_app.bat
    ```
-   File `run_app.bat` sẽ tự động biên dịch APK, bật máy ảo, cài đặt và mở ứng dụng.
+   File `run_app.bat` sẽ tự động khởi động **REST API Server (`port 3000`)**, biên dịch APK, bật máy ảo, cài đặt và mở ứng dụng.
 
 ---
 
-## PHẦN 3: THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP TRONG ỨNG DỤNG
+## PHẦN 3: HỆ THỐNG BACKEND REST API (`backend-api/server.js`)
+
+Project đi kèm **REST API Server** tại thư mục `backend-api/` và lớp kết nối HTTP `ApiClient.java` (`http://10.0.2.2:3000/api`).
+
+* **Khởi chạy riêng API Server (nếu cần):**
+  ```powershell
+  node backend-api/server.js
+  ```
+* **Danh sách các Endpoint RESTful (`http://localhost:3000/api`):**
+  * `GET    /api/health` — Kiểm tra trạng thái hoạt động của API Server
+  * `POST   /api/auth/login` — Đăng nhập & phân quyền (`ADMIN` / `CUSTOMER`)
+  * `POST   /api/auth/register` — Đăng ký tài khoản mới
+  * `PUT    /api/auth/password` — Đổi mật khẩu tài khoản
+  * `GET    /api/fruits` — Lấy danh sách toàn bộ các món trái cây cắt sẵn
+  * `POST   /api/fruits` — Thêm hộp trái cây mới (Admin)
+  * `PUT    /api/fruits/:id` — Cập nhật giá / thông tin hộp trái cây (Admin)
+  * `DELETE /api/fruits/:id` — Xóa hộp trái cây khỏi cửa hàng (Admin)
+  * `GET    /api/orders` — Lấy danh sách toàn bộ đơn hàng
+  * `POST   /api/orders` — Tạo đơn đặt hàng mới (Thanh toán QR / COD)
+  * `PUT    /api/orders/:id/status` — Cập nhật trạng thái đơn hàng (`Đang giao lạnh`, `Hoàn thành`, `Đã hủy`)
+  * `DELETE /api/orders/:id` — Xóa đơn hàng (Admin)
+  * `GET    /api/store` & `PUT /api/store` — Xem và cập nhật cấu hình cửa hàng
+
+---
+
+## PHẦN 4: THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP TRONG ỨNG DỤNG
 
 1. **Tài khoản Khách mua hàng (Mặc định hoặc tự Đăng ký mới):**
    * **Email:** `buu@foodapp.vn`

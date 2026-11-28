@@ -1,0 +1,141 @@
+{
+  "store": {
+    "name": "Quán Trái Cây Cắt Sẵn FreshCut",
+    "address": "123 Nguyễn Văn Cừ, Quận 5, TP.HCM",
+    "phone": "0352847621",
+    "deliveryFee": 15000,
+    "isOpen": true
+  },
+  "users": [
+    {
+      "name": "Admin Quản Trị",
+      "email": "admin@fruit.vn",
+      "phone": "0352847621",
+      "password": "admin123",
+      "role": "ADMIN"
+    },
+    {
+      "name": "Pham Ngoc Thanh Phong",
+      "email": "buu@foodapp.vn",
+      "phone": "0352847621",
+      "password": "123456",
+      "role": "CUSTOMER"
+    },
+    {
+      "name": "pham ngoc thanh phong",
+      "email": "sphong2161857@gmail.com",
+      "phone": "0352947621",
+      "password": "123456",
+      "role": "CUSTOMER"
+    }
+  ],
+  "fruits": [
+    {
+      "id": "fr1",
+      "name": "Hộp Xoài Cát Hòa Lộc Cắt Sẵn (400g)",
+      "category": "Hộp cắt sẵn",
+      "price": 45000,
+      "rating": "4.9",
+      "description": "Xoài chín tới dẻo thơm hoặc xoài keo giòn chua ngọt, gọt vỏ cắt miếng sẵn, tặng kèm hũ muối tôm Tây Ninh & mắm đường.",
+      "emoji": "🥭"
+    },
+    {
+      "id": "fr2",
+      "name": "Hộp Dưa Hấu Không Hạt Ướp Lạnh (450g)",
+      "category": "Hộp cắt sẵn",
+      "price": 35000,
+      "rating": "4.9",
+      "description": "Dưa hấu đỏ mọng ngọt lịm, không hạt, cắt miếng vuông vừa ăn, ướp lạnh mát sảng khoái kèm nĩa và muối ớt.",
+      "emoji": "🍉"
+    },
+    {
+      "id": "fr3",
+      "name": "Khay Trái Cây Nhiệt Đới Mix 5 Vị (600g)",
+      "category": "Mix thập cẩm",
+      "price": 75000,
+      "rating": "5.0",
+      "description": "Kết hợp 5 loại trái cây tươi: Xoài keo, Dưa hấu, Dứa mật, Ổi nữ hoàng và Thanh long đỏ, kèm 2 loại muối chấm.",
+      "emoji": "🍍"
+    },
+    {
+      "id": "fr4",
+      "name": "Hộp Dâu Tây Đà Lạt & Nho Xanh (350g)",
+      "category": "Mix thập cẩm",
+      "price": 69000,
+      "rating": "4.9",
+      "description": "Dâu tây Đà Lạt mọng đỏ chua ngọt dịu nhẹ kết hợp nho xanh không hạt giòn tan, rửa sạch bằng nước lọc RO.",
+      "emoji": "🍓"
+    },
+    {
+      "id": "fr5",
+      "name": "Hộp Kiwi Vàng & Táo Envy Cắt Sẵn (400g)",
+      "category": "Mix thập cẩm",
+      "price": 79000,
+      "rating": "4.8",
+      "description": "Kiwi vàng New Zealand giàu Vitamin C mix cùng táo Envy Mỹ giòn ngọt, gọt sẵn đóng hộp tiện lợi.",
+      "emoji": "🥝"
+    },
+    {
+      "id": "fr6",
+      "name": "Hộp Ổi Hồng & Mận An Phước Giòn Ngọt",
+      "category": "Hộp cắt sẵn",
+      "price": 35000,
+      "rating": "4.8",
+      "description": "Ổi hồng nữ hoàng bỏ ruột giòn rụm cùng mận An Phước ngọt thanh, tặng kèm muối ớt xanh chấm cực cuốn.",
+      "emoji": "🍑"
+    },
+    {
+      "id": "fr7",
+      "name": "Tô Trái Cây Dầm Sữa Chua Hy Lạp",
+      "category": "Trái cây dầm",
+      "price": 55000,
+      "rating": "4.9",
+      "description": "Bơ sáp, dâu tây, xoài chín, chuối và thanh long dầm cùng sữa chua Hy Lạp sánh mịn, rắc hạt granola & hạnh nhân.",
+      "emoji": "🥑"
+    },
+    {
+      "id": "fr8",
+      "name": "Trái Cây Tô Dầm Sữa Đặc Đá Tuyết",
+      "category": "Trái cây dầm",
+      "price": 45000,
+      "rating": "4.8",
+      "description": "Đầy ắp 7 loại trái cây tươi theo mùa dầm sữa đặc, cốt dừa béo ngậy và trân châu trắng giòn dai.",
+      "emoji": "🍧"
+    },
+    {
+      "id": "fr9",
+      "name": "Nước Ép Cam Tươi & Dứa Mật Nguyên Chất",
+      "category": "Nước ép tươi",
+      "price": 38000,
+      "rating": "4.9",
+      "description": "Ép lạnh 100% từ cam vàng tươi và dứa mật nguyên chất, không đường hóa học, giữ trọn dưỡng chất.",
+      "emoji": "🍊"
+    }
+  ],
+  "orders": [
+    {
+      "orderId": "#FR-2825",
+      "dateTime": "27/11/2026 - 02:33",
+      "itemsSummary": "2x Hộp Ổi Hồng & Mận An Phước Giòn Ngọt\n1x Tô Trái Cây Dầm Sữa Chua Hy Lạp",
+      "totalPrice": 140000,
+      "address": "TP. Hồ Chí Minh",
+      "status": "Đã thanh toán QR (FC3975)"
+    },
+    {
+      "orderId": "#FR-2041",
+      "dateTime": "17/11/2026 - 15:20",
+      "itemsSummary": "1x Khay Trái Cây Nhiệt Đới Mix 5 Vị (600g)\n1x Tô Trái Cây Dầm Sữa Chua Hy Lạp",
+      "totalPrice": 145000,
+      "address": "TP. Hồ Chí Minh",
+      "status": "Đã thanh toán (QR)"
+    },
+    {
+      "orderId": "#FR-2035",
+      "dateTime": "16/11/2026 - 10:05",
+      "itemsSummary": "1x Hộp Dâu Tây Đà Lạt & Nho Xanh (350g)\n1x Hộp Xoài Cát Hòa Lộc Cắt Sẵn (400g)",
+      "totalPrice": 129000,
+      "address": "TP. Hồ Chí Minh",
+      "status": "Hoàn thành"
+    }
+  ]
+}

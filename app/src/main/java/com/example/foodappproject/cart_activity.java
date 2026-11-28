@@ -5,12 +5,15 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
@@ -24,7 +27,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import org.json.JSONObject;
+
 import java.util.List;
+import java.util.Random;
 
 public class cart_activity extends AppCompatActivity {
 
@@ -39,6 +45,10 @@ public class cart_activity extends AppCompatActivity {
     private LinearLayout llCartItems;
     private RadioButton rbQrPayment;
     private Button btnCheckout;
+
+    private final Handler pollHandler = new Handler(Looper.getMainLooper());
+    private Runnable pollRunnable;
+    private boolean isPollingPayment = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +91,7 @@ public class cart_activity extends AppCompatActivity {
                 return;
             }
             if (rbQrPayment.isChecked()) {
-                showQrPaymentDialog();
+                showQrPaymentWaitingBankDialog();
             } else {
                 completeOrder("Thanh toán khi nhận (COD)");
             }
@@ -99,6 +109,19 @@ public class cart_activity extends AppCompatActivity {
         String address = prefs.getString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
         tvDeliveryAddress.setText(name + " • " + phone + "\n" + address);
         refreshScreen();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopPollingPayment();
+    }
+
+    private void stopPollingPayment() {
+        isPollingPayment = false;
+        if (pollRunnable != null) {
+            pollHandler.removeCallbacks(pollRunnable);
+        }
     }
 
     private void switchTab(boolean showPaid) {
@@ -134,15 +157,29 @@ public class cart_activity extends AppCompatActivity {
         }
     }
 
-    private void showQrPaymentDialog() {
+    /**
+     * Hiển thị mã VietQR và chờ Ngân hàng MB Bank báo thành công mới tự động hoàn tất đơn hàng.
+     * Khách hàng KHÔNG có nút tự bấm "Đã thanh toán".
+     */
+    private void showQrPaymentWaitingBankDialog() {
         int totalAmount = FoodDataManager.getCartSubtotal(this) + FoodDataManager.getDeliveryFee(this);
+        String txCode = "FC" + (1000 + new Random().nextInt(8999));
+
+        // Đăng ký phiên giao dịch chờ thanh toán lên REST API Server
+        try {
+            JSONObject createBody = new JSONObject();
+            createBody.put("txCode", txCode);
+            createBody.put("amount", totalAmount);
+            ApiClient.requestAsync("POST", "/payments/create", createBody);
+        } catch (Exception ignored) {
+        }
 
         ScrollView scrollView = new ScrollView(this);
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.VERTICAL);
         container.setGravity(Gravity.CENTER_HORIZONTAL);
         container.setBackgroundColor(Color.WHITE);
-        container.setPadding(dp(20), dp(16), dp(20), dp(10));
+        container.setPadding(dp(20), dp(16), dp(20), dp(12));
 
         TextView tvTitle = new TextView(this);
         tvTitle.setText("QUÉT MÃ VIETQR ĐỂ THANH TOÁN");
@@ -154,45 +191,123 @@ public class cart_activity extends AppCompatActivity {
 
         TextView tvBank = new TextView(this);
         tvBank.setText("Chủ TK: PHAM NGOC THANH PHONG\nSố TK: 0352847621 (MB Bank)");
-        tvBank.setTextSize(14f);
+        tvBank.setTextSize(13.5f);
         tvBank.setTextColor(Color.parseColor("#33691E"));
         tvBank.setGravity(Gravity.CENTER);
-        tvBank.setPadding(0, dp(6), 0, dp(10));
+        tvBank.setPadding(0, dp(4), 0, dp(8));
         container.addView(tvBank);
 
         ImageView imgQr = new ImageView(this);
         imgQr.setImageResource(R.drawable.qr_payment);
         imgQr.setAdjustViewBounds(true);
         imgQr.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        LinearLayout.LayoutParams qrLp = new LinearLayout.LayoutParams(dp(260), dp(300));
+        LinearLayout.LayoutParams qrLp = new LinearLayout.LayoutParams(dp(240), dp(275));
         imgQr.setLayoutParams(qrLp);
         container.addView(imgQr);
 
         TextView tvAmount = new TextView(this);
-        tvAmount.setText("Số tiền thanh toán: " + FoodDataManager.formatCurrency(totalAmount));
+        tvAmount.setText("Số tiền: " + FoodDataManager.formatCurrency(totalAmount));
         tvAmount.setTextSize(18f);
         tvAmount.setTypeface(null, Typeface.BOLD);
         tvAmount.setTextColor(Color.parseColor("#E65100"));
         tvAmount.setGravity(Gravity.CENTER);
-        tvAmount.setPadding(0, dp(10), 0, dp(4));
+        tvAmount.setPadding(0, dp(8), 0, dp(2));
         container.addView(tvAmount);
 
         TextView tvNote = new TextView(this);
-        tvNote.setText("Nội dung CK: THANH TOAN TRAI CAY CAT SAN");
-        tvNote.setTextSize(13f);
-        tvNote.setTextColor(Color.parseColor("#558B2F"));
+        tvNote.setText("Nội dung CK: " + txCode);
+        tvNote.setTextSize(15f);
+        tvNote.setTypeface(null, Typeface.BOLD);
+        tvNote.setTextColor(Color.parseColor("#1B5E20"));
         tvNote.setGravity(Gravity.CENTER);
         container.addView(tvNote);
 
+        // Khung vòng xoay trạng thái chờ Ngân hàng MB Bank xác nhận
+        LinearLayout waitBox = new LinearLayout(this);
+        waitBox.setOrientation(LinearLayout.HORIZONTAL);
+        waitBox.setGravity(Gravity.CENTER);
+        waitBox.setBackgroundResource(R.drawable.bg_food_thumb);
+        waitBox.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams waitLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        waitLp.topMargin = dp(10);
+        waitBox.setLayoutParams(waitLp);
+
+        ProgressBar spinner = new ProgressBar(this);
+        LinearLayout.LayoutParams spinLp = new LinearLayout.LayoutParams(dp(24), dp(24));
+        spinLp.setMarginEnd(dp(10));
+        spinner.setLayoutParams(spinLp);
+        waitBox.addView(spinner);
+
+        TextView tvWaitStatus = new TextView(this);
+        tvWaitStatus.setText("Đang chờ ngân hàng MB Bank xác nhận...\n(http://localhost:3000/mbbank)");
+        tvWaitStatus.setTextSize(12.5f);
+        tvWaitStatus.setTypeface(null, Typeface.BOLD);
+        tvWaitStatus.setTextColor(Color.parseColor("#1B5E20"));
+        waitBox.addView(tvWaitStatus);
+
+        container.addView(waitBox);
         scrollView.addView(container);
 
-        new AlertDialog.Builder(this)
+        AlertDialog qrDialog = new AlertDialog.Builder(this)
                 .setView(scrollView)
-                .setCancelable(true)
-                .setPositiveButton("✅ Đã Thanh Toán Thành Công", (dialog, which) -> {
-                    completeOrder("Đã thanh toán (QR)");
+                .setCancelable(false)
+                .setNegativeButton("Hủy giao dịch", (dialog, which) -> {
+                    stopPollingPayment();
                 })
-                .setNegativeButton("Đóng", null)
+                .create();
+
+        qrDialog.setOnDismissListener(d -> stopPollingPayment());
+        qrDialog.show();
+
+        // Bắt đầu Polling kiểm tra trạng thái từ Server mỗi 1.5 giây
+        isPollingPayment = true;
+        pollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isPollingPayment) return;
+                new Thread(() -> {
+                    JSONObject res = ApiClient.requestSync("GET", "/payments/" + ApiClient.encodePath(txCode), null);
+                    boolean isPaid = res != null && "PAID".equalsIgnoreCase(res.optString("status"));
+                    if (isPaid) {
+                        runOnUiThread(() -> {
+                            if (!isPollingPayment) return;
+                            stopPollingPayment();
+                            if (qrDialog.isShowing()) {
+                                qrDialog.dismiss();
+                            }
+                            onBankConfirmedSuccess(txCode, totalAmount);
+                        });
+                    } else if (isPollingPayment) {
+                        pollHandler.postDelayed(pollRunnable, 1500);
+                    }
+                }).start();
+            }
+        };
+        pollHandler.postDelayed(pollRunnable, 1500);
+    }
+
+    private void onBankConfirmedSuccess(String txCode, int totalAmount) {
+        SharedPreferences prefs = getSharedPreferences(profile_activity.PREFS_NAME, MODE_PRIVATE);
+        String address = prefs.getString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
+        FoodDataManager.OrderRecord order = FoodDataManager.placeOrder(
+                this,
+                address,
+                "Đã thanh toán QR (" + txCode + ")"
+        );
+
+        switchTab(true);
+
+        new AlertDialog.Builder(this)
+                .setTitle("🎉 Thanh Toán Thành Công!")
+                .setMessage("Ngân hàng MB Bank (0352847621) đã xác nhận nhận đủ số tiền "
+                        + FoodDataManager.formatCurrency(totalAmount) + ".\n\n"
+                        + "• Mã giao dịch: " + txCode + "\n"
+                        + "• Mã đơn hàng: " + order.orderId + "\n"
+                        + "• Trạng thái: ✅ Đã thanh toán (QR)")
+                .setPositiveButton("Xem mục Đã thanh toán", null)
                 .show();
     }
 
@@ -201,9 +316,7 @@ public class cart_activity extends AppCompatActivity {
         String address = prefs.getString(profile_activity.KEY_ADDRESS, "TP. Hồ Chí Minh");
         FoodDataManager.OrderRecord order = FoodDataManager.placeOrder(this, address, paymentStatus);
 
-        Toast.makeText(this, "🎉 Thanh toán thành công đơn " + order.orderId + "!", Toast.LENGTH_LONG).show();
-
-        // Tự động chuyển sang mục "Đã thanh toán" để hiển thị ngay đơn vừa thanh toán
+        Toast.makeText(this, "🎉 Đặt hàng thành công đơn " + order.orderId + "!", Toast.LENGTH_LONG).show();
         switchTab(true);
     }
 
@@ -342,7 +455,6 @@ public class cart_activity extends AppCompatActivity {
             lp.bottomMargin = dp(12);
             card.setLayoutParams(lp);
 
-            // Dòng tiêu đề + Badge ĐÃ THANH TOÁN
             LinearLayout topRow = new LinearLayout(this);
             topRow.setOrientation(LinearLayout.HORIZONTAL);
             topRow.setGravity(Gravity.CENTER_VERTICAL);
